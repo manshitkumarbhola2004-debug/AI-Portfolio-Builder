@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Portfolia AI | Portfolio Builder</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/styles.css">
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<header class="navbar">
+
+  <div class="nav-container">
+
+    <a href="#" class="logo">
+      <span class="logo-icon">P</span>
+      Portfolia<span class="logo-ai">AI</span>
+    </a>
+
+    <div class="nav-center">
+      <span class="nav-status">
+        <span class="status-dot"></span>
+        AI Portfolio Studio
+      </span>
+    </div>
+
+    <a href="#preview" class="nav-button">
+      Preview Portfolio ↗
+    </a>
+
+  </div>
+
+</header>
+
+
+<!-- MAIN -->
+
+<main class="container">
+
+  <!-- HERO -->
+
+  <section class="hero-section">
+
+    <div class="hero-badge">
+      ✦ YOUR PERSONAL AI PORTFOLIO BUILDER
+    </div>
+
+    <h1>
+      Build your identity.<br>
+      <span>Showcase your talent.</span>
+    </h1>
+
+    <p>
+      Create a professional portfolio that speaks for you.
+      Add your details, use AI to enhance your content,
+      and preview your personal website instantly.
+    </p>
+
+    <div class="hero-stats">
+
+      <div class="stat">
+        <span class="stat-icon">✦</span>
+        <span>AI Powered</span>
+      </div>
+
+      <div class="stat">
+        <span class="stat-icon">◈</span>
+        <span>Live Preview</span>
+      </div>
+
+      <div class="stat">
+        <span class="stat-icon">↗</span>
+        <span>Professional Design</span>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- WORKSPACE -->
+
+  <section class="workspace">
+
+    <!-- PROFILE EDITOR -->
+
+    <div class="panel editor-panel">
+
+      <div class="panel-title">
+
+        <div>
+          <span class="section-label">01 / YOUR PROFILE</span>
+          <h2>Build your profile</h2>
+          <p>Tell us about yourself and your work.</p>
+        </div>
+
+        <div class="panel-icon">✎</div>
+
+      </div>
+
+
+      <form id="profileForm">
+
+        <div class="form-grid">
+
+          <label>
+            Full name
+
+            <input
+              id="name"
+              placeholder="Harshit Bhola"
+              required
+            >
+          </label>
+
+          <label>
+            Professional headline
+
+            <input
+              id="headline"
+              placeholder="AI & ML Developer"
+            >
+          </label>
+
+          <label>
+            Email address
+
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+            >
+          </label>
+
+          <label>
+            Location
+
+            <input
+              id="location"
+              placeholder="Jaipur, India"
+            >
+          </label>
+
+        </div>
+
+
+        <label>
+          Education
+
+          <input
+            id="education"
+            placeholder="B.Tech Computer Science"
+          >
+        </label>
+
+
+        <label>
+          Skills
+
+          <span class="field-hint">
+            Separate skills using commas
+          </span>
+
+          <input
+            id="skills"
+            placeholder="Python, JavaScript, AI, React..."
+          >
+        </label>
+
+
+        <label>
+          Projects
+
+          <span class="field-hint">
+            Project name | Description | Link
+          </span>
+
+          <textarea
+            id="projects"
+            rows="4"
+            placeholder="AI Portfolio Builder | Portfolio website powered by AI | https://example.com"
+          ></textarea>
+
+        </label>
+
+
+        <label>
+          About me
+
+          <textarea
+            id="about"
+            rows="4"
+            placeholder="Tell people about yourself..."
+          ></textarea>
+
+        </label>
+
+
+        <div class="form-actions">
+
+          <button class="btn btn-primary" type="submit">
+            Save Profile
+            <span>↗</span>
+          </button>
+
+          <button class="btn btn-secondary" type="button" id="loadBtn">
+            Load Profile
+          </button>
+
+        </div>
+
+      </form>
+
+      <div id="message" class="message"></div>
+
+    </div>
+
+
+    <!-- LIVE PREVIEW -->
+
+    <div class="panel preview-panel" id="preview">
+
+      <div class="panel-title">
+
+        <div>
+          <span class="section-label">02 / LIVE PREVIEW</span>
+          <h2>Your portfolio</h2>
+          <p>See your website update in real time.</p>
+        </div>
+
+        <div class="preview-badge">
+          <span class="status-dot"></span>
+          LIVE
+        </div>
+
+      </div>
+
+
+      <div class="portfolio">
+
+        <div class="portfolio-nav">
+
+          <div class="portfolio-logo" id="navName">
+            Your Name<span>.</span>
+          </div>
+
+          <div class="portfolio-links">
+            ABOUT &nbsp; SKILLS &nbsp; PROJECTS
+          </div>
+
+        </div>
+
+
+        <div class="portfolio-hero">
+
+          <div class="avatar" id="avatar">
+            Y
+          </div>
+
+          <span class="portfolio-kicker">
+            HELLO, I'M
+          </span>
+
+          <h2 id="previewName">
+            Your Name<span>.</span>
+          </h2>
+
+          <h3 id="previewHeadline">
+            Your professional headline
+          </h3>
+
+          <p id="previewAbout">
+            Your introduction will appear here.
+            Create your profile and generate your introduction using AI.
+          </p>
+
+          <a
+            href="mailto:"
+            id="previewEmail"
+            class="contact-button"
+          >
+            Let's Connect ↗
+          </a>
+
+        </div>
+
+
+        <div class="portfolio-content">
+
+          <div class="portfolio-block">
+
+            <span class="mini-label">MY EXPERTISE</span>
+
+            <h3>Skills & Technologies</h3>
+
+            <div class="skill-list" id="previewSkills">
+              <span class="skill">Your skills</span>
+            </div>
+
+          </div>
+
+
+          <div class="portfolio-block">
+
+            <span class="mini-label">MY WORK</span>
+
+            <h3>Featured Projects</h3>
+
+            <div id="previewProjects">
+              <p class="muted">
+                Your projects will appear here.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="portfolio-footer">
+
+          Crafted with <strong>Portfolia AI</strong>
+
+          <span id="previewLocation">
+            India
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="preview-note">
+        ✦ Your portfolio updates automatically as you edit.
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- AI STUDIO -->
+
+  <section class="ai-studio">
+
+    <div class="studio-heading">
+
+      <div>
+
+        <div class="section-label">
+          03 / AI TOOLS
+        </div>
+
+        <h2>
+          Your AI creative studio
+          <span class="heading-sparkle">✦</span>
+        </h2>
+
+        <p>
+          Let AI turn your ideas into professional content.
+        </p>
+
+      </div>
+
+      <div class="ai-powered-badge">
+        ✦ Powered by Gemini AI
+      </div>
+
+    </div>
+
+
+    <div class="ai-grid">
+
+
+      <!-- AI ABOUT -->
+
+      <div class="ai-card">
+
+        <div class="ai-card-header">
+
+          <div class="ai-card-icon purple">
+            ✦
+          </div>
+
+          <div class="ai-card-number">
+            AI TOOL 01
+          </div>
+
+        </div>
+
+        <h3>About Me Generator</h3>
+
+        <p>
+          Turn your profile details into a professional
+          and impressive introduction.
+        </p>
+
+        <div class="ai-card-footer">
+
+          <button
+            class="btn btn-ai"
+            id="generateBtn"
+          >
+            Generate Introduction
+            <span>↗</span>
+          </button>
+
+        </div>
+
+        <div id="aiStatus" class="ai-status"></div>
+
+      </div>
+
+
+      <!-- AI IMPROVER -->
+
+      <div class="ai-card">
+
+        <div class="ai-card-header">
+
+          <div class="ai-card-icon blue">
+            ✎
+          </div>
+
+          <div class="ai-card-number">
+            AI TOOL 02
+          </div>
+
+        </div>
+
+        <h3>Content Improver</h3>
+
+        <p>
+          Transform your rough text into polished,
+          professional writing.
+        </p>
+
+        <textarea
+          id="rawText"
+          rows="3"
+          class="ai-input"
+          placeholder="Paste your text here..."
+        ></textarea>
+
+        <button
+          class="btn btn-ai"
+          id="improveBtn"
+        >
+          Improve My Text
+          <span>↗</span>
+        </button>
+
+        <div
+          id="improveResult"
+          class="ai-result"
+          hidden
+        ></div>
+
+      </div>
+
+
+      <!-- PROJECT GENERATOR -->
+
+      <div class="ai-card">
+
+        <div class="ai-card-header">
+
+          <div class="ai-card-icon orange">
+            🚀
+          </div>
+
+          <div class="ai-card-number">
+            AI TOOL 03
+          </div>
+
+        </div>
+
+        <h3>Project Generator</h3>
+
+        <p>
+          Generate creative project ideas with
+          descriptions and technologies.
+        </p>
+
+        <input
+          id="projectTopic"
+          class="ai-input"
+          placeholder="Project topic (e.g. Artificial Intelligence)"
+        >
+
+        <input
+          id="projectTech"
+          class="ai-input"
+          placeholder="Technologies (optional)"
+        >
+
+        <button
+          class="btn btn-ai"
+          id="generateProjectBtn"
+        >
+          Generate Project
+          <span>↗</span>
+        </button>
+
+        <div
+          id="projectResult"
+          class="ai-result"
+          hidden
+        ></div>
+
+      </div>
+
+
+    </div>
+
+  </section>
+
+
+  <!-- FOOTER -->
+
+  <footer class="footer">
+
+    <div class="footer-logo">
+      Portfolia<span>AI</span>
+    </div>
+
+    <p>
+      Build your identity. Showcase your talent.
+    </p>
+
+    <div class="footer-bottom">
+      AI PORTFOLIO BUILDER · MADE FOR CREATORS
+    </div>
+
+  </footer>
+
+</main>
+
+
+<script src="/app.js"></script>
+
+</body>
+</html>
