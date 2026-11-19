@@ -1,19 +1,292 @@
 // ==========================================
-// PORTFOLIA AI - FRONTEND JAVASCRIPT
+// PORTFOLIA AI - AUTHENTICATED FRONTEND
 // ==========================================
 
 const $ = id => document.getElementById(id);
 
+const TOKEN_KEY = "portfolia_token";
+
 const fields = [
-  "name",
-  "headline",
-  "email",
-  "location",
-  "education",
-  "skills",
-  "projects",
-  "about"
+    "name",
+    "headline",
+    "email",
+    "location",
+    "education",
+    "skills",
+    "projects",
+    "about"
 ];
+
+
+// ==========================================
+// AUTHENTICATION HELPERS
+// ==========================================
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function saveToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken() {
+    localStorage.removeItem(TOKEN_KEY);
+}
+
+async function apiFetch(url, options = {}) {
+
+    const headers = {
+        ...(options.headers || {})
+    };
+
+    const token = getToken();
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        clearToken();
+        showAuthScreen();
+        throw new Error("Session expired. Please login again.");
+    }
+
+    return response;
+}
+
+
+// ==========================================
+// SHOW LOGIN / SIGNUP
+// ==========================================
+
+function showAuthScreen() {
+
+    $("authScreen").hidden = false;
+    $("appNavbar").hidden = true;
+    $("dashboard").hidden = true;
+
+    $("loginForm").hidden = false;
+    $("signupForm").hidden = true;
+
+    $("authMessage").textContent = "";
+
+}
+
+function showDashboard(user) {
+
+    $("authScreen").hidden = true;
+    $("appNavbar").hidden = false;
+    $("dashboard").hidden = false;
+
+    $("loggedUserName").textContent =
+        user.name || user.email;
+
+    render();
+
+}
+
+$("showSignup").addEventListener("click", () => {
+
+    $("loginForm").hidden = true;
+    $("signupForm").hidden = false;
+
+    $("authMessage").textContent = "";
+
+});
+
+$("showLogin").addEventListener("click", () => {
+
+    $("signupForm").hidden = true;
+    $("loginForm").hidden = false;
+
+    $("authMessage").textContent = "";
+
+});
+
+
+// ==========================================
+// SIGNUP
+// ==========================================
+
+$("signupForm").addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const button = $("signupButton");
+
+    const name = $("signupName").value.trim();
+    const email = $("signupEmail").value.trim();
+    const password = $("signupPassword").value;
+
+    button.disabled = true;
+    button.textContent = "Creating Account...";
+
+    $("authMessage").textContent = "";
+
+    try {
+
+        const response = await fetch("/api/auth/signup", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                name,
+                email,
+                password
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Signup failed");
+        }
+
+        saveToken(data.token);
+
+        $("signupForm").reset();
+
+        showDashboard(data.user);
+
+        $("message").textContent =
+            "✓ Account created successfully!";
+
+        await loadProfile();
+
+    } catch (error) {
+
+        $("authMessage").textContent =
+            error.message;
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Create Account";
+
+    }
+
+});
+
+
+// ==========================================
+// LOGIN
+// ==========================================
+
+$("loginForm").addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const button = $("loginButton");
+
+    const email = $("loginEmail").value.trim();
+    const password = $("loginPassword").value;
+
+    button.disabled = true;
+    button.textContent = "Logging in...";
+
+    $("authMessage").textContent = "";
+
+    try {
+
+        const response = await fetch("/api/auth/login", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                email,
+                password
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Login failed");
+        }
+
+        saveToken(data.token);
+
+        $("loginForm").reset();
+
+        showDashboard(data.user);
+
+        $("message").textContent =
+            "✓ Login successful!";
+
+        await loadProfile();
+
+    } catch (error) {
+
+        $("authMessage").textContent =
+            error.message;
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Login";
+
+    }
+
+});
+
+
+// ==========================================
+// LOGOUT
+// ==========================================
+
+$("logoutButton").addEventListener("click", () => {
+
+    clearToken();
+
+    $("profileForm").reset();
+
+    $("message").textContent = "";
+
+    $("aiStatus").textContent = "";
+
+    $("improveResult").hidden = true;
+    $("projectResult").hidden = true;
+
+    showAuthScreen();
+
+});
+
+
+// ==========================================
+// HTML SECURITY
+// ==========================================
+
+function escapeHtml(value) {
+
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    }[character]));
+
+}
+
+function escapeAttr(value) {
+    return escapeHtml(value);
+}
 
 
 // ==========================================
@@ -21,20 +294,24 @@ const fields = [
 // ==========================================
 
 function parseProjects(value) {
-  return value
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const [name = "", description = "", link = ""] =
-        line.split("|").map(x => x.trim());
 
-      return {
-        name,
-        description,
-        link
-      };
-    });
+    return value
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => {
+
+            const [name = "", description = "", link = ""] =
+                line.split("|").map(x => x.trim());
+
+            return {
+                name,
+                description,
+                link
+            };
+
+        });
+
 }
 
 
@@ -43,22 +320,30 @@ function parseProjects(value) {
 // ==========================================
 
 function getData() {
-  return {
-    name: $("name").value.trim(),
-    headline: $("headline").value.trim(),
-    email: $("email").value.trim(),
-    location: $("location").value.trim(),
-    education: $("education").value.trim(),
 
-    skills: $("skills").value
-      .split(",")
-      .map(s => s.trim())
-      .filter(Boolean),
+    return {
 
-    projects: parseProjects($("projects").value),
+        name: $("name").value.trim(),
 
-    about: $("about").value.trim()
-  };
+        headline: $("headline").value.trim(),
+
+        email: $("email").value.trim(),
+
+        location: $("location").value.trim(),
+
+        education: $("education").value.trim(),
+
+        skills: $("skills").value
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean),
+
+        projects: parseProjects($("projects").value),
+
+        about: $("about").value.trim()
+
+    };
+
 }
 
 
@@ -67,91 +352,68 @@ function getData() {
 // ==========================================
 
 function render() {
-  const d = getData();
 
-  // Name
-  $("navName").innerHTML =
-    `${escapeHtml(d.name || "Your Name")}<span>.</span>`;
+    const d = getData();
 
-  $("previewName").innerHTML =
-    `${escapeHtml(d.name || "Your Name")}<span>.</span>`;
+    $("navName").innerHTML =
+        `${escapeHtml(d.name || "Your Name")}<span>.</span>`;
 
-  // Avatar
-  $("avatar").textContent =
-    (d.name || "Y").charAt(0).toUpperCase();
+    $("previewName").innerHTML =
+        `${escapeHtml(d.name || "Your Name")}<span>.</span>`;
 
-  // Headline
-  $("previewHeadline").textContent =
-    d.headline || "Your professional headline";
+    $("avatar").textContent =
+        (d.name || "Y").charAt(0).toUpperCase();
 
-  // About
-  $("previewAbout").textContent =
-    d.about ||
-    "Your introduction will appear here. Create your profile and generate your introduction using AI.";
+    $("previewHeadline").textContent =
+        d.headline || "Your professional headline";
 
-  // Email
-  $("previewEmail").href =
-    d.email
-      ? `mailto:${encodeURIComponent(d.email)}`
-      : "mailto:";
+    $("previewAbout").textContent =
+        d.about ||
+        "Your introduction will appear here. Create your profile and generate your introduction using AI.";
 
-  $("previewEmail").style.display =
-    d.email ? "inline-block" : "none";
+    $("previewEmail").href =
+        d.email
+            ? `mailto:${encodeURIComponent(d.email)}`
+            : "mailto:";
 
-  // Location
-  $("previewLocation").textContent =
-    d.location || "India";
+    $("previewEmail").style.display =
+        d.email ? "inline-block" : "none";
 
-  // Skills
-  $("previewSkills").innerHTML =
-    d.skills.length
-      ? d.skills.map(skill =>
-          `<span class="skill">${escapeHtml(skill)}</span>`
-        ).join("")
-      : '<span class="skill">Your skills</span>';
+    $("previewLocation").textContent =
+        d.location || "India";
 
-  // Projects
-  $("previewProjects").innerHTML =
-    d.projects.length
-      ? d.projects.map(project => `
-          <div class="project-card">
+    $("previewSkills").innerHTML =
+        d.skills.length
+            ? d.skills.map(skill =>
+                `<span class="skill">${escapeHtml(skill)}</span>`
+            ).join("")
+            : '<span class="skill">Your skills</span>';
 
-            <b>${escapeHtml(project.name || "Project")}</b>
+    $("previewProjects").innerHTML =
+        d.projects.length
+            ? d.projects.map(project => `
 
-            <p>${escapeHtml(project.description)}</p>
+                <div class="project-card">
 
-            ${
-              project.link
-                ? `<a href="${escapeAttr(project.link)}"
-                     target="_blank"
-                     rel="noopener noreferrer">
-                     View project ↗
-                   </a>`
-                : ""
-            }
+                    <b>${escapeHtml(project.name || "Project")}</b>
 
-          </div>
-        `).join("")
-      : '<p class="muted">Your projects will appear here.</p>';
-}
+                    <p>${escapeHtml(project.description)}</p>
 
+                    ${
+                        project.link
+                            ? `<a href="${escapeAttr(project.link)}"
+                                 target="_blank"
+                                 rel="noopener noreferrer">
+                                 View project ↗
+                               </a>`
+                            : ""
+                    }
 
-// ==========================================
-// HTML SECURITY
-// ==========================================
+                </div>
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[character]));
-}
+            `).join("")
+            : '<p class="muted">Your projects will appear here.</p>';
 
-function escapeAttr(value) {
-  return escapeHtml(value);
 }
 
 
@@ -160,7 +422,9 @@ function escapeAttr(value) {
 // ==========================================
 
 fields.forEach(id => {
-  $(id).addEventListener("input", render);
+
+    $(id).addEventListener("input", render);
+
 });
 
 
@@ -169,34 +433,42 @@ fields.forEach(id => {
 // ==========================================
 
 $("profileForm").addEventListener("submit", async event => {
-  event.preventDefault();
 
-  $("message").textContent = "Saving profile...";
+    event.preventDefault();
 
-  try {
-    const response = await fetch("/api/profile", {
-      method: "POST",
+    $("message").textContent =
+        "Saving profile...";
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+    try {
 
-      body: JSON.stringify(getData())
-    });
+        const response = await apiFetch("/api/profile", {
 
-    const data = await response.json();
+            method: "POST",
 
-    if (!response.ok) {
-      throw new Error(data.error || "Profile save failed");
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(getData())
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Profile save failed");
+        }
+
+        $("message").textContent =
+            "✓ " + data.message;
+
+    } catch (error) {
+
+        $("message").textContent =
+            "⚠ " + error.message;
+
     }
 
-    $("message").textContent =
-      "✓ " + (data.message || "Profile saved successfully!");
-
-  } catch (error) {
-    $("message").textContent =
-      "⚠ " + error.message;
-  }
 });
 
 
@@ -204,69 +476,91 @@ $("profileForm").addEventListener("submit", async event => {
 // LOAD PROFILE
 // ==========================================
 
-$("loadBtn").addEventListener("click", async () => {
-
-  $("message").textContent =
-    "Loading saved profile...";
-
-  try {
-    const response = await fetch("/api/profile");
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Profile loading failed");
-    }
-
-    if (!data.name) {
-      $("message").textContent =
-        "No saved profile found yet.";
-
-      return;
-    }
-
-    $("name").value =
-      data.name || "";
-
-    $("headline").value =
-      data.headline || "";
-
-    $("email").value =
-      data.email || "";
-
-    $("location").value =
-      data.location || "";
-
-    $("education").value =
-      data.education || "";
-
-    $("skills").value =
-      (data.skills || []).join(", ");
-
-    $("projects").value =
-      (data.projects || [])
-        .map(project =>
-          [
-            project.name,
-            project.description,
-            project.link
-          ].join(" | ")
-        )
-        .join("\n");
-
-    $("about").value =
-      data.about || "";
-
-    render();
+async function loadProfile() {
 
     $("message").textContent =
-      "✓ Saved profile loaded successfully.";
+        "Loading saved profile...";
 
-  } catch (error) {
-    $("message").textContent =
-      "⚠ " + error.message;
-  }
-});
+    try {
+
+        const response = await apiFetch("/api/profile");
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Profile loading failed");
+        }
+
+        if (!data.name) {
+
+            $("message").textContent =
+                "Welcome! Create your portfolio profile.";
+
+            return;
+
+        }
+
+        $("name").value =
+            data.name || "";
+
+        $("headline").value =
+            data.headline || "";
+
+        $("email").value =
+            data.email || "";
+
+        $("location").value =
+            data.location || "";
+
+        $("education").value =
+            data.education || "";
+
+        $("skills").value =
+            parseStoredArray(data.skills).join(", ");
+
+        $("projects").value =
+            parseStoredArray(data.projects)
+                .map(project =>
+                    [
+                        project.name,
+                        project.description,
+                        project.link
+                    ].join(" | ")
+                )
+                .join("\n");
+
+        $("about").value =
+            data.about || "";
+
+        render();
+
+        $("message").textContent =
+            "✓ Saved profile loaded successfully.";
+
+    } catch (error) {
+
+        $("message").textContent =
+            "⚠ " + error.message;
+
+    }
+
+}
+
+function parseStoredArray(value) {
+
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    try {
+        return JSON.parse(value || "[]");
+    } catch {
+        return [];
+    }
+
+}
+
+$("loadBtn").addEventListener("click", loadProfile);
 
 
 // ==========================================
@@ -276,51 +570,56 @@ $("loadBtn").addEventListener("click", async () => {
 
 $("generateBtn").addEventListener("click", async () => {
 
-  const button = $("generateBtn");
+    const button = $("generateBtn");
+    const status = $("aiStatus");
 
-  const status = $("aiStatus");
+    button.disabled = true;
+    button.textContent = "Generating...";
 
-  button.disabled = true;
+    status.textContent =
+        "✦ AI is creating your professional introduction...";
 
-  button.innerHTML = "Generating...";
+    try {
 
-  status.textContent =
-    "✦ AI is creating your professional introduction...";
+        const response = await apiFetch("/api/ai/generate-about", {
 
-  try {
-    const response = await fetch("/api/ai/generate-about", {
-      method: "POST",
+            method: "POST",
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-      body: JSON.stringify(getData())
-    });
+            body: JSON.stringify(getData())
 
-    const data = await response.json();
+        });
 
-    if (!response.ok) {
-      throw new Error(data.error || "AI generation failed");
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "AI generation failed");
+        }
+
+        $("about").value = data.text;
+
+        render();
+
+        status.textContent =
+            "✓ Introduction generated successfully! Save your profile to store it.";
+
+    } catch (error) {
+
+        status.textContent =
+            "⚠ " + error.message;
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerHTML =
+            'Generate Introduction <span>↗</span>';
+
     }
 
-    $("about").value = data.text;
-
-    render();
-
-    status.textContent =
-      "✓ Introduction generated successfully! Save your profile to store it.";
-
-  } catch (error) {
-    status.textContent =
-      "⚠ " + error.message;
-
-  } finally {
-    button.disabled = false;
-
-    button.innerHTML =
-      'Generate Introduction <span>↗</span>';
-  }
 });
 
 
@@ -331,63 +630,68 @@ $("generateBtn").addEventListener("click", async () => {
 
 $("improveBtn").addEventListener("click", async () => {
 
-  const button = $("improveBtn");
+    const button = $("improveBtn");
+    const result = $("improveResult");
 
-  const result = $("improveResult");
+    const text = $("rawText").value.trim();
 
-  const text = $("rawText").value.trim();
+    if (!text) {
 
-  if (!text) {
+        result.hidden = false;
+
+        result.textContent =
+            "Please enter some text first.";
+
+        return;
+
+    }
+
+    button.disabled = true;
+    button.textContent = "Improving Text...";
+
     result.hidden = false;
 
     result.textContent =
-      "Please enter some text first.";
+        "✦ AI is polishing your content...";
 
-    return;
-  }
+    try {
 
-  button.disabled = true;
+        const response = await apiFetch("/api/ai/improve", {
 
-  button.innerHTML =
-    "Improving Text...";
+            method: "POST",
 
-  result.hidden = false;
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-  result.textContent =
-    "✦ AI is polishing your content...";
+            body: JSON.stringify({
+                text
+            })
 
-  try {
-    const response = await fetch("/api/ai/improve", {
-      method: "POST",
+        });
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+        const data = await response.json();
 
-      body: JSON.stringify({
-        text
-      })
-    });
+        if (!response.ok) {
+            throw new Error(data.error || "Content improvement failed");
+        }
 
-    const data = await response.json();
+        result.textContent = data.text;
 
-    if (!response.ok) {
-      throw new Error(data.error || "Content improvement failed");
+    } catch (error) {
+
+        result.textContent =
+            "⚠ " + error.message;
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerHTML =
+            'Improve My Text <span>↗</span>';
+
     }
 
-    result.textContent =
-      data.text;
-
-  } catch (error) {
-    result.textContent =
-      "⚠ " + error.message;
-
-  } finally {
-    button.disabled = false;
-
-    button.innerHTML =
-      'Improve My Text <span>↗</span>';
-  }
 });
 
 
@@ -398,103 +702,142 @@ $("improveBtn").addEventListener("click", async () => {
 
 $("generateProjectBtn").addEventListener("click", async () => {
 
-  const button = $("generateProjectBtn");
+    const button = $("generateProjectBtn");
+    const result = $("projectResult");
 
-  const result = $("projectResult");
+    const topic = $("projectTopic").value.trim();
+    const technologies = $("projectTech").value.trim();
 
-  const topic = $("projectTopic").value.trim();
+    if (!topic) {
 
-  const technologies = $("projectTech").value.trim();
+        result.hidden = false;
 
-  if (!topic) {
+        result.textContent =
+            "Please enter a project topic first.";
+
+        return;
+
+    }
+
+    button.disabled = true;
+    button.textContent = "Generating Project...";
+
     result.hidden = false;
 
     result.textContent =
-      "Please enter a project topic first.";
+        "✦ AI is generating a creative project idea...";
 
-    return;
-  }
+    try {
 
-  button.disabled = true;
+        const response = await apiFetch("/api/ai/generate-project", {
 
-  button.innerHTML =
-    "Generating Project...";
+            method: "POST",
 
-  result.hidden = false;
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-  result.textContent =
-    "✦ AI is generating a creative project idea...";
+            body: JSON.stringify({
+                topic,
+                technologies
+            })
 
-  try {
-    const response = await fetch("/api/ai/generate-project", {
-      method: "POST",
+        });
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+        const data = await response.json();
 
-      body: JSON.stringify({
-        topic,
-        technologies
-      })
-    });
+        if (!response.ok) {
+            throw new Error(data.error || "Project generation failed");
+        }
 
-    const data = await response.json();
+        result.textContent =
+            data.text || JSON.stringify(data, null, 2);
 
-    if (!response.ok) {
-      throw new Error(data.error || "Project generation failed");
+    } catch (error) {
+
+        result.textContent =
+            "⚠ " + error.message;
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerHTML =
+            'Generate Project <span>↗</span>';
+
     }
 
-    result.textContent =
-      data.text || JSON.stringify(data, null, 2);
-
-  } catch (error) {
-    result.textContent =
-      "⚠ " + error.message;
-
-  } finally {
-    button.disabled = false;
-
-    button.innerHTML =
-      'Generate Project <span>↗</span>';
-  }
 });
 
 
 // ==========================================
-// INITIALIZE LIVE PREVIEW
+// INITIALIZE APPLICATION
 // ==========================================
 
-render();
+async function initializeApp() {
+
+    const token = getToken();
+
+    if (!token) {
+        showAuthScreen();
+        return;
+    }
+
+    try {
+
+        const response = await apiFetch("/api/auth/me");
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Session verification failed");
+        }
+
+        showDashboard(data.user);
+
+        await loadProfile();
+
+    } catch (error) {
+
+        clearToken();
+
+        showAuthScreen();
+
+        $("authMessage").textContent =
+            "Please login to continue.";
+
+    }
+
+}
 
 
 // ==========================================
 // DATABASE HEALTH CHECK
 // ==========================================
 
-fetch("/api/health")
+async function checkServer() {
 
-  .then(response => response.json())
+    try {
 
-  .then(data => {
+        const response = await fetch("/api/health");
 
-    if (data.database === "connected") {
+        const data = await response.json();
 
-      $("message").textContent =
-        "✓ SQLite database connected successfully.";
+        console.log("Server Health:", data);
 
-    } else {
+    } catch (error) {
 
-      $("message").textContent =
-        "⚠ Database connection unavailable. Check your server.";
+        console.error("Server health check failed:", error);
 
     }
 
-  })
+}
 
-  .catch(() => {
 
-    $("message").textContent =
-      "⚠ Server is not running. Start server.js and refresh the page.";
+// ==========================================
+// START APPLICATION
+// ==========================================
 
-  });
+checkServer();
+
+initializeApp();
